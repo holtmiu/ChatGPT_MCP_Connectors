@@ -15,27 +15,33 @@ type FeishuTools struct {
 func (t FeishuTools) Tools() []Tool {
 	stringProp := map[string]any{"type": "string"}
 	boolProp := map[string]any{"type": "boolean"}
-	intProp := map[string]any{"type": "integer"}
+	intProp := map[string]any{"type": "integer", "minimum": 1}
+	formatProp := map[string]any{"type": "string", "enum": []string{"json", "markdown", "both"}}
 	return []Tool{
 		{
 			Name:        "feishu_doc_resolve",
-			Description: "Resolve a Feishu/Lark document URL or token into a normalized document identity.",
+			Description: "Resolve a Feishu/Lark document URL or token into a normalized document identity. This tool does not call Feishu APIs.",
 			InputSchema: objectSchema(map[string]any{"input": stringProp}, []string{"input"}),
 		},
 		{
 			Name:        "feishu_doc_get_metadata",
-			Description: "Get metadata for a Feishu/Lark docx document.",
+			Description: "Get metadata for a Feishu/Lark docx document using the configured Feishu/Lark app credentials.",
 			InputSchema: objectSchema(map[string]any{"input": stringProp}, []string{"input"}),
 		},
 		{
 			Name:        "feishu_doc_read",
-			Description: "Read a Feishu/Lark docx document and return normalized blocks plus Markdown.",
-			InputSchema: objectSchema(map[string]any{"input": stringProp, "format": stringProp, "maxBlocks": intProp, "maxDepth": intProp, "includeUnsupportedRaw": boolProp}, []string{"input"}),
+			Description: "Read a Feishu/Lark docx document and return normalized blocks plus Markdown. Requires the document to be accessible to the configured app/token.",
+			InputSchema: objectSchema(map[string]any{"input": stringProp, "format": formatProp, "maxBlocks": intProp, "maxDepth": intProp, "includeUnsupportedRaw": boolProp}, []string{"input"}),
+		},
+		{
+			Name:        "feishu_doc_create",
+			Description: "Create a Feishu/Lark docx document and optionally append Markdown content. Dry-run is enabled by default unless dryRun=false or server default is changed.",
+			InputSchema: objectSchema(map[string]any{"title": stringProp, "folderToken": stringProp, "markdown": stringProp, "dryRun": boolProp, "operationId": stringProp}, []string{"title"}),
 		},
 		{
 			Name:        "feishu_doc_append",
-			Description: "Dry-run append Markdown to a Feishu/Lark document. Real write execution is disabled in MVP.",
-			InputSchema: objectSchema(map[string]any{"input": stringProp, "markdown": stringProp, "afterBlockId": stringProp, "dryRun": boolProp, "operationId": stringProp}, []string{"input"}),
+			Description: "Append Markdown content to a Feishu/Lark docx document. Dry-run is enabled by default unless dryRun=false or server default is changed.",
+			InputSchema: objectSchema(map[string]any{"input": stringProp, "markdown": stringProp, "afterBlockId": stringProp, "dryRun": boolProp, "operationId": stringProp}, []string{"input", "markdown"}),
 		},
 	}
 }
@@ -70,6 +76,12 @@ func (t FeishuTools) CallTool(ctx context.Context, name string, args json.RawMes
 			return nil, err
 		}
 		return t.Service.ReadDocument(ctx, req.Input, feishu.ReadOptions{Format: req.Format, MaxBlocks: req.MaxBlocks, MaxDepth: req.MaxDepth, IncludeUnsupportedRaw: req.IncludeUnsupportedRaw})
+	case "feishu_doc_create":
+		var req feishu.CreateDocumentRequest
+		if err := decodeArgs(args, &req); err != nil {
+			return nil, err
+		}
+		return t.Service.CreateDocument(ctx, req)
 	case "feishu_doc_append":
 		var req struct {
 			Input        string `json:"input"`
