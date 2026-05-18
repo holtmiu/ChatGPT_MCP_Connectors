@@ -1,0 +1,28 @@
+package main
+
+import (
+	"context"
+	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
+
+	"github.com/holtmiu/ChatGPT_MCP_Connectors/internal/config"
+	"github.com/holtmiu/ChatGPT_MCP_Connectors/internal/feishu"
+	"github.com/holtmiu/ChatGPT_MCP_Connectors/internal/mcp"
+)
+
+const version = "0.1.0"
+
+func main() {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	cfg := config.Load()
+	service := feishu.NewService(cfg)
+	server := mcp.NewServer("feishu-doc-mcp-server", version, mcp.FeishuTools{Service: service})
+	if err := server.Serve(ctx, os.Stdin, os.Stdout); err != nil && ctx.Err() == nil {
+		fmt.Fprintf(os.Stderr, "server error: %v\n", err)
+		os.Exit(1)
+	}
+}
