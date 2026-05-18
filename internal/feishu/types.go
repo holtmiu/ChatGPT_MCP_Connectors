@@ -75,6 +75,14 @@ type DocumentReadResult struct {
 	Truncated bool              `json:"truncated,omitempty"`
 }
 
+type CreateDocumentRequest struct {
+	Title       string `json:"title"`
+	FolderToken string `json:"folderToken,omitempty"`
+	Markdown    string `json:"markdown,omitempty"`
+	DryRun      *bool  `json:"dryRun,omitempty"`
+	OperationID string `json:"operationId,omitempty"`
+}
+
 type AppendRequest struct {
 	Markdown     string            `json:"markdown,omitempty"`
 	Blocks       []NormalizedBlock `json:"blocks,omitempty"`
@@ -84,10 +92,11 @@ type AppendRequest struct {
 }
 
 type DocumentWriteResult struct {
-	OperationID   string   `json:"operationId"`
-	DocumentID    string   `json:"documentId"`
-	ChangedBlocks []string `json:"changedBlocks"`
-	URL           string   `json:"url,omitempty"`
-	DryRun        bool     `json:"dryRun"`
-	Warnings      []string `json:"warnings,omitempty"`
+	OperationID   string         `json:"operationId"`
+	DocumentID    string         `json:"documentId"`
+	ChangedBlocks []string       `json:"changedBlocks"`
+	URL           string         `json:"url,omitempty"`
+	DryRun        bool           `json:"dryRun"`
+	Request       map[string]any `json:"request,omitempty"`
+	Warnings      []string       `json:"warnings,omitempty"`
 }
