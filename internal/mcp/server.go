@@ -45,9 +45,10 @@ func (s *Server) Serve(ctx context.Context, in io.Reader, out io.Writer) error {
 			continue
 		}
 		if len(req.ID) == 0 {
+			_ = s.HandleNotification(ctx, req)
 			continue
 		}
-		resp := s.handle(ctx, req)
+		resp := s.HandleRequest(ctx, req)
 		if err := encoder.Encode(resp); err != nil {
 			return fmt.Errorf("encode response: %w", err)
 		}
@@ -55,7 +56,16 @@ func (s *Server) Serve(ctx context.Context, in io.Reader, out io.Writer) error {
 	return scanner.Err()
 }
 
-func (s *Server) handle(ctx context.Context, req Request) Response {
+func (s *Server) HandleNotification(ctx context.Context, req Request) error {
+	switch req.Method {
+	case "notifications/initialized", "$/cancelRequest":
+		return nil
+	default:
+		return nil
+	}
+}
+
+func (s *Server) HandleRequest(ctx context.Context, req Request) Response {
 	resp := Response{JSONRPC: "2.0", ID: req.ID}
 	switch req.Method {
 	case "initialize":
@@ -64,6 +74,8 @@ func (s *Server) handle(ctx context.Context, req Request) Response {
 			"serverInfo":      map[string]any{"name": s.name, "version": s.version},
 			"capabilities":    map[string]any{"tools": map[string]any{}},
 		}
+	case "ping":
+		resp.Result = map[string]any{}
 	case "tools/list":
 		resp.Result = map[string]any{"tools": s.handler.Tools()}
 	case "tools/call":
