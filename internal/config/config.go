@@ -13,18 +13,22 @@ const (
 )
 
 type Config struct {
-	Provider                 string
-	BaseURL                  string
-	AppID                    string
-	AppSecret                string
-	TenantAccessToken        string
-	APITimeout               time.Duration
-	APIMaxRetries            int
-	DocMaxBlocks             int
-	DocMaxDepth              int
-	WriteDryRunDefault       bool
-	DocxMetadataPathTemplate string
-	DocxChildrenPathTemplate string
+	Provider                       string
+	BaseURL                        string
+	AppID                          string
+	AppSecret                      string
+	TenantAccessToken              string
+	APITimeout                     time.Duration
+	APIMaxRetries                  int
+	DocMaxBlocks                   int
+	DocMaxDepth                    int
+	WriteDryRunDefault             bool
+	DocxMetadataPathTemplate       string
+	DocxChildrenPathTemplate       string
+	DocxAppendChildrenPathTemplate string
+	DocxCreatePath                 string
+	MCPHTTPAddr                    string
+	MCPServerAPIKey                string
 }
 
 func Load() Config {
@@ -35,18 +39,22 @@ func Load() Config {
 	}
 
 	return Config{
-		Provider:                 provider,
-		BaseURL:                  strings.TrimRight(getenv("FEISHU_BASE_URL", defaultBase), "/"),
-		AppID:                    os.Getenv("FEISHU_APP_ID"),
-		AppSecret:                os.Getenv("FEISHU_APP_SECRET"),
-		TenantAccessToken:        os.Getenv("FEISHU_TENANT_ACCESS_TOKEN"),
-		APITimeout:               time.Duration(getenvInt("FEISHU_API_TIMEOUT_MS", 15000)) * time.Millisecond,
-		APIMaxRetries:            getenvInt("FEISHU_API_MAX_RETRIES", 3),
-		DocMaxBlocks:             getenvInt("FEISHU_DOC_MAX_BLOCKS", 3000),
-		DocMaxDepth:              getenvInt("FEISHU_DOC_MAX_DEPTH", 20),
-		WriteDryRunDefault:       getenvBool("FEISHU_DOC_WRITE_DRY_RUN_DEFAULT", true),
-		DocxMetadataPathTemplate: getenv("FEISHU_DOCX_METADATA_PATH_TEMPLATE", "/open-apis/docx/v1/documents/%s"),
-		DocxChildrenPathTemplate: getenv("FEISHU_DOCX_CHILDREN_PATH_TEMPLATE", "/open-apis/docx/v1/documents/%s/blocks/%s/children"),
+		Provider:                       provider,
+		BaseURL:                        strings.TrimRight(getenv("FEISHU_BASE_URL", defaultBase), "/"),
+		AppID:                          os.Getenv("FEISHU_APP_ID"),
+		AppSecret:                      os.Getenv("FEISHU_APP_SECRET"),
+		TenantAccessToken:              os.Getenv("FEISHU_TENANT_ACCESS_TOKEN"),
+		APITimeout:                     time.Duration(getenvInt("FEISHU_API_TIMEOUT_MS", 15000)) * time.Millisecond,
+		APIMaxRetries:                  getenvInt("FEISHU_API_MAX_RETRIES", 3),
+		DocMaxBlocks:                   getenvInt("FEISHU_DOC_MAX_BLOCKS", 3000),
+		DocMaxDepth:                    getenvInt("FEISHU_DOC_MAX_DEPTH", 20),
+		WriteDryRunDefault:             getenvBool("FEISHU_DOC_WRITE_DRY_RUN_DEFAULT", true),
+		DocxMetadataPathTemplate:       getenv("FEISHU_DOCX_METADATA_PATH_TEMPLATE", "/open-apis/docx/v1/documents/%s"),
+		DocxChildrenPathTemplate:       getenv("FEISHU_DOCX_CHILDREN_PATH_TEMPLATE", "/open-apis/docx/v1/documents/%s/blocks/%s/children"),
+		DocxAppendChildrenPathTemplate: getenv("FEISHU_DOCX_APPEND_CHILDREN_PATH_TEMPLATE", "/open-apis/docx/v1/documents/%s/blocks/%s/children"),
+		DocxCreatePath:                 getenv("FEISHU_DOCX_CREATE_PATH", "/open-apis/docx/v1/documents"),
+		MCPHTTPAddr:                    getenv("MCP_HTTP_ADDR", ":8080"),
+		MCPServerAPIKey:                os.Getenv("MCP_SERVER_API_KEY"),
 	}
 }
 
