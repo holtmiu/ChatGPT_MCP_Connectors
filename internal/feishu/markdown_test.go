@@ -14,3 +14,13 @@ func TestExportMarkdown(t *testing.T) {
 		t.Fatalf("unexpected markdown output")
 	}
 }
+
+func TestMarkdownToBlocks(t *testing.T) {
+	got := markdownToBlocks("# Title\n\n- Item\n\nBody")
+	if len(got) != 3 {
+		t.Fatalf("expected 3 blocks, got %d", len(got))
+	}
+	if got[0].Type != "heading" || got[1].Type != "bullet_list" || got[2].Type != "paragraph" {
+		t.Fatalf("unexpected blocks: %+v", got)
+	}
+}
