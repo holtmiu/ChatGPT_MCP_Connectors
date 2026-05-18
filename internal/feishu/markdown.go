@@ -1,13 +1,19 @@
 package feishu
 
-import "strings"
+import (
+	"strings"
+)
 
 func exportMarkdown(blocks []NormalizedBlock) string {
 	var b strings.Builder
 	for _, block := range blocks {
 		writeMarkdownBlock(&b, block, 0)
 	}
-	return strings.TrimSpace(b.String()) + "\n"
+	out := strings.TrimSpace(b.String())
+	if out == "" {
+		return ""
+	}
+	return out + "\n"
 }
 
 func writeMarkdownBlock(b *strings.Builder, block NormalizedBlock, depth int) {
@@ -91,6 +97,88 @@ func writeMarkdownBlock(b *strings.Builder, block NormalizedBlock, depth int) {
 	if block.Type == "bullet_list" || block.Type == "ordered_list" || block.Type == "todo_list" {
 		b.WriteString("\n")
 	}
+}
+
+func markdownToBlocks(markdown string) []NormalizedBlock {
+	lines := strings.Split(strings.ReplaceAll(markdown, "\r\n", "\n"), "\n")
+	blocks := make([]NormalizedBlock, 0, len(lines))
+	inCode := false
+	var code strings.Builder
+	for _, raw := range lines {
+		line := strings.TrimRight(raw, " \t")
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") {
+			if inCode {
+				blocks = append(blocks, NormalizedBlock{Type: "code_block", Text: strings.TrimRight(code.String(), "\n")})
+				code.Reset()
+				inCode = false
+			} else {
+				inCode = true
+			}
+			continue
+		}
+		if inCode {
+			code.WriteString(line)
+			code.WriteByte('\n')
+			continue
+		}
+		if trimmed == "" {
+			continue
+		}
+		if trimmed == "---" || trimmed == "***" {
+			blocks = append(blocks, NormalizedBlock{Type: "divider"})
+			continue
+		}
+		if level, text := parseHeading(trimmed); level > 0 {
+			blocks = append(blocks, NormalizedBlock{Type: "heading", Text: text, Attrs: map[string]any{"level": level}})
+			continue
+		}
+		if strings.HasPrefix(trimmed, "- [ ] ") || strings.HasPrefix(trimmed, "- [x] ") || strings.HasPrefix(trimmed, "- [X] ") {
+			blocks = append(blocks, NormalizedBlock{Type: "todo_list", Text: strings.TrimSpace(trimmed[6:])})
+			continue
+		}
+		if strings.HasPrefix(trimmed, "- ") || strings.HasPrefix(trimmed, "* ") {
+			blocks = append(blocks, NormalizedBlock{Type: "bullet_list", Text: strings.TrimSpace(trimmed[2:])})
+			continue
+		}
+		if idx := orderedListIndex(trimmed); idx > 0 {
+			blocks = append(blocks, NormalizedBlock{Type: "ordered_list", Text: strings.TrimSpace(trimmed[idx:])})
+			continue
+		}
+		if strings.HasPrefix(trimmed, "> ") {
+			blocks = append(blocks, NormalizedBlock{Type: "quote", Text: strings.TrimSpace(trimmed[2:])})
+			continue
+		}
+		blocks = append(blocks, NormalizedBlock{Type: "paragraph", Text: trimmed})
+	}
+	if inCode && code.Len() > 0 {
+		blocks = append(blocks, NormalizedBlock{Type: "code_block", Text: strings.TrimRight(code.String(), "\n")})
+	}
+	return blocks
+}
+
+func parseHeading(line string) (int, string) {
+	count := 0
+	for count < len(line) && line[count] == '#' {
+		count++
+	}
+	if count == 0 || count > 9 || count >= len(line) || line[count] != ' ' {
+		return 0, ""
+	}
+	return count, strings.TrimSpace(line[count:])
+}
+
+func orderedListIndex(line string) int {
+	for i, r := range line {
+		if r >= '0' && r <= '9' {
+			continue
+		}
+		if r == '.' && i+1 < len(line) && line[i+1] == ' ' {
+			return i + 2
+		}
+		return 0
+	}
+	return 0
 }
 
 func intAttr(attrs map[string]any, key string, fallback int) int {
